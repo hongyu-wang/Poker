@@ -45,12 +45,12 @@ def read_csv(file_name: str):
     for name in results:
         s1 += results[name][ENTER]
         s1 -= results[name][EXIT]
+        print(name, (results[name][EXIT] - results[name][ENTER])/400)
 
     print("Buy Ins - Cash Outs", s1)
 
     print("Results")
     pp.PrettyPrinter().pprint(results)
-
 
 def is_update(line):
     return re.search(UPDATED_REGEX, line) is not None
