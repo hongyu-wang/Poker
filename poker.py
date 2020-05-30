@@ -7,7 +7,7 @@ VALUE_REGEX = r"stack of ([0-9]+)"
 CHANGE_REGEX = r"stack from ([0-9]+) to ([0-9]+)"
 
 
-g = {"BUY_IN_REGEX": "(participation)"}
+g = {"BUY_IN_REGEX": "(participation|created)"}
 QUIT_REGEX = "(quits)"
 UPDATED_REGEX = "(updated)"
 IGNORE_REGEX = r"(WARNING)"
