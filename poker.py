@@ -1,13 +1,14 @@
 import glob
 import re
 import pprint as pp
+import sys
 
 NAME_REGEX = r"player\s(\"\".*@.*\"\")"
 VALUE_REGEX = r"stack of ([0-9]+)"
 CHANGE_REGEX = r"stack from ([0-9]+) to ([0-9]+)"
 
 
-g = {"BUY_IN_REGEX": "(participation|created)"}
+BUY_IN_REGEX = "(participation|created)"
 QUIT_REGEX = "(quits)"
 UPDATED_REGEX = "(updated)"
 IGNORE_REGEX = r"(WARNING)"
@@ -15,7 +16,7 @@ ENTER = "enter"
 EXIT = "exit"
 
 
-def read_csv(file_name: str):
+def process_csv(file_name: str):
     results = {}
     with open(file_name, 'r', encoding='utf8') as f:
         log = f.readlines()[1:][::-1]
@@ -57,7 +58,7 @@ def is_update(line):
 
 
 def is_buy_in(line):
-    return re.search(g["BUY_IN_REGEX"], line) is not None
+    return re.search(BUY_IN_REGEX, line) is not None
 
 
 def is_cash_out(line):
@@ -94,5 +95,8 @@ def process_value(line: str) -> int:
 
 
 if __name__ == "__main__":
-    for file in glob.glob("*.csv", recursive=True):
-        read_csv(file)
+    if len(sys.argv) > 1:
+        process_csv(sys.argv[0])
+    else:
+        for file in glob.glob("*.csv", recursive=True):
+            process_csv(file)
