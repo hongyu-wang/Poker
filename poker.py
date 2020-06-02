@@ -19,6 +19,7 @@ DID_QUIT = "did quit"
 OLD_DATA = "old"
 NAME = "name"
 
+
 def process_csv(file_name: str):
     results = {}
     with open(file_name, 'r', encoding='utf8') as f:
