@@ -2,19 +2,22 @@ import glob
 import re
 import pprint as pp
 import sys
+import copy
 
 NAME_REGEX = r"player\s(\"\".*@.*\"\")"
 VALUE_REGEX = r"stack of ([0-9]+)"
 CHANGE_REGEX = r"stack from ([0-9]+) to ([0-9]+)"
-
-
+STAND_UP_REGEX = "(stand)"
 BUY_IN_REGEX = "(participation|created)"
 QUIT_REGEX = "(quits)"
 UPDATED_REGEX = "(updated)"
-IGNORE_REGEX = r"(WARNING)"
+IGNORE_REGEX = r"(WARNING|seat|passed)"
 ENTER = "enter"
 EXIT = "exit"
-
+STAND_UP = "stand up"
+DID_QUIT = "did quit"
+OLD_DATA = "old"
+NAME = "name"
 
 def process_csv(file_name: str):
     results = {}
@@ -23,10 +26,9 @@ def process_csv(file_name: str):
         for line in log:
             if ignore(line):
                 continue
-
             if is_update(line):
                 if name not in results:
-                    results[name] = {ENTER: 0, EXIT: 0}
+                    results[name] = create_player()
 
                 name, value = process_name(line), process_change(line)
                 results[name][ENTER] += value
@@ -34,7 +36,7 @@ def process_csv(file_name: str):
                 name, value = get_name_and_value(line)
 
                 if name not in results:
-                    results[name] = {ENTER: 0, EXIT: 0}
+                    results[name] = create_player()
 
                 if is_buy_in(line):
                     results[name][ENTER] += value
@@ -42,16 +44,50 @@ def process_csv(file_name: str):
                 if is_cash_out(line):
                     results[name][EXIT] += value
 
+                if is_stand(line):
+                    results[name][STAND_UP] = value
+    output_results(consolidate_same_ids(results))
+
+
+def output_results(results: dict):
+    print("======= Tentative Results ===========")
     s1 = 0
-    for name in results:
-        s1 += results[name][ENTER]
-        s1 -= results[name][EXIT]
-        print(name, (results[name][EXIT] - results[name][ENTER])/400)
+    for unique_id in results:
+        s1 += results[unique_id][ENTER]
+        s1 -= results[unique_id][EXIT]
+        print(results[unique_id][NAME], (results[unique_id][EXIT] - results[unique_id][ENTER]) / 1000)
 
     print("Buy Ins - Cash Outs", s1)
 
-    print("Results")
+    print("======= Results JSON ===========")
     pp.PrettyPrinter().pprint(results)
+
+
+def consolidate_same_ids(results: dict) -> dict:
+    consolidated_results = {}
+    for name in results:
+        unique_hash = name.split(" ")[-1]
+        data = results[name]
+
+        if unique_hash in consolidated_results:
+            consolidated_results[unique_hash][ENTER] += data[ENTER]
+            consolidated_results[unique_hash][EXIT] += data[EXIT]
+            consolidated_results[unique_hash][OLD_DATA] += [{name: data}]
+        else:
+            consolidated_results[unique_hash] = copy.deepcopy(data)
+            consolidated_results[unique_hash][NAME] = name
+            consolidated_results[unique_hash][OLD_DATA] = [{name: data}]
+
+    return consolidated_results
+
+
+def create_player() -> dict:
+    return {ENTER: 0, EXIT: 0, STAND_UP: 0}
+
+
+def is_stand(line):
+    return re.search(STAND_UP_REGEX, line) is not None
+
 
 def is_update(line):
     return re.search(UPDATED_REGEX, line) is not None
